@@ -6,11 +6,13 @@ import { LoginPage } from './pages/auth/LoginPage';
 import { RegisterPage } from './pages/auth/RegisterPage';
 import { ProductsPage } from './pages/products/ProductsPage';
 import { RetailersPage } from './pages/retailers/RetailersPage';
+import { LandingPage } from './pages/marketing/LandingPage';
 
 export default function App() {
     return (
         <AuthProvider>
             <Routes>
+                <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
 
