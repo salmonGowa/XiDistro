@@ -6,12 +6,20 @@
 
         <title>{{ config('app.name', 'XiDistro') }}</title>
 
+        <script>
+            (function () {
+                var stored = localStorage.getItem('theme');
+                var isDark = stored ? stored === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', isDark);
+            })();
+        </script>
+
         @fonts
 
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.tsx'])
     </head>
-    <body class="antialiased">
+    <body class="bg-background text-foreground antialiased">
         <div id="app"></div>
     </body>
 </html>

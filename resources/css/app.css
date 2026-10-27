@@ -3,7 +3,156 @@
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
+/* Manual (class-based) dark mode instead of Tailwind v4's default prefers-color-scheme variant. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /*
+     * Semantic color tokens. Each aliases a plain custom property (defined in :root/.dark below)
+     * rather than a literal, so utilities like `bg-card` re-resolve automatically when the `dark`
+     * class toggles at runtime.
+     */
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-border: var(--border);
+    --color-ring: var(--ring);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent-soft: var(--accent-soft);
+}
+
+:root {
+    --background: #ffffff;
+    --foreground: #0f172a; /* slate-900 */
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    --muted: #f1f5f9; /* slate-100 */
+    --muted-foreground: #64748b; /* slate-500 — 4.6:1 on white, passes AA */
+    --border: #e2e8f0; /* slate-200 */
+    --ring: #6366f1; /* indigo-500 */
+    --primary: #4f46e5; /* indigo-600 */
+    --primary-foreground: #ffffff;
+    --destructive: #dc2626; /* red-600 */
+    --destructive-foreground: #ffffff;
+    --success: #059669; /* emerald-600 */
+    --success-foreground: #ffffff;
+    /* Warm welcome band (hero, help strip). Dark text on amber clears AA. */
+    --accent: #fbbf24; /* amber-400 */
+    --accent-foreground: #0f172a;
+    --accent-soft: #fef3c7; /* amber-100 */
+}
+
+.dark {
+    /* Rich dark neutrals (slate-900/800), never pure black. */
+    --background: #0f172a; /* slate-900 */
+    --foreground: #f1f5f9; /* slate-100 */
+    --card: #1e293b; /* slate-800 */
+    --card-foreground: #f1f5f9;
+    --muted: #334155; /* slate-700 */
+    --muted-foreground: #94a3b8; /* slate-400 — ~7:1 on slate-900 */
+    --border: #334155; /* slate-700 */
+    --ring: #818cf8; /* indigo-400 */
+
+    /*
+     * Solid buttons flip to a lighter chip + dark text in dark mode — white-on-indigo-600 style
+     * buttons don't clear AA once the background around them goes dark; dark-text-on-light-chip does.
+     */
+    --primary: #818cf8; /* indigo-400 */
+    --primary-foreground: #0f172a;
+    --destructive: #f87171; /* red-400 */
+    --destructive-foreground: #0f172a;
+    --success: #34d399; /* emerald-400 */
+    --success-foreground: #0f172a;
+    --accent: #fbbf24; /* amber-400 */
+    --accent-foreground: #0f172a;
+    --accent-soft: #1c1917; /* stone-900 — warm-tinted dark band */
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Logo ticker: two copies of the track sit side by side, animate one track-width left, loop seamlessly. */
+@keyframes marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+.animate-marquee {
+    animation: marquee 32s linear infinite;
+}
+
+@keyframes fadein {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-edges {
+    mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+}
+
+/* App overlays: drawer slides in from the right, dialogs/toasts rise in. */
+@keyframes slide-in-right {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes rise-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.animate-slide-in-right {
+    animation: slide-in-right 0.22s ease-out;
+}
+
+.animate-rise-in {
+    animation: rise-in 0.18s ease-out;
+}
+
+.animate-fade-in {
+    animation: fadein 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .animate-slide-in-right,
+    .animate-rise-in,
+    .animate-fade-in,
+    .animate-marquee {
+        animation: none;
+    }
 }

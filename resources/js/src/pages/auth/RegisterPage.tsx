@@ -1,9 +1,24 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { isAxiosError } from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { extractErrors, type FieldErrors } from '../../hooks/useCollection';
+import { AuthLayout } from '../../components/layout/AuthLayout';
+import { Button } from '../../components/ui/Button';
+import { FormError, FormField, Input, PasswordInput } from '../../components/ui/Form';
 
-type FieldErrors = Record<string, string[]>;
+function Section({ step, title, children }: { step: number; title: string; children: ReactNode }) {
+    return (
+        <fieldset className="space-y-4">
+            <legend className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                    {step}
+                </span>
+                {title}
+            </legend>
+            {children}
+        </fieldset>
+    );
+}
 
 export function RegisterPage() {
     const { user, register } = useAuth();
@@ -18,10 +33,11 @@ export function RegisterPage() {
         password_confirmation: '',
     });
     const [errors, setErrors] = useState<FieldErrors>({});
+    const [formError, setFormError] = useState<string>();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (user) {
-        return <Navigate to="/products" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     function update(field: keyof typeof form, value: string) {
@@ -31,143 +47,135 @@ export function RegisterPage() {
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
         setErrors({});
+        setFormError(undefined);
         setIsSubmitting(true);
         try {
             await register(form);
-            navigate('/products');
+            navigate('/dashboard');
         } catch (err) {
-            if (isAxiosError(err) && err.response?.status === 422) {
-                setErrors(err.response.data.errors ?? {});
-            } else {
-                setErrors({ form: ['Something went wrong. Please try again.'] });
-            }
+            const { fields, message } = extractErrors(err);
+            setErrors(fields);
+            setFormError(message);
         } finally {
             setIsSubmitting(false);
         }
     }
 
-    function fieldError(field: string) {
-        return errors[field]?.[0];
-    }
+    const fieldError = (field: string) => errors[field]?.[0];
+    const passwordsMismatch = form.password_confirmation !== '' && form.password !== form.password_confirmation;
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-8">
-            <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <h1 className="mb-1 text-xl font-semibold text-slate-900">Register your business</h1>
-                <p className="mb-6 text-sm text-slate-500">Create your distributor account on XiDistro.</p>
+        <AuthLayout title="Register your business" subtitle="Takes about two minutes. You can start adding products right after.">
+            <form onSubmit={handleSubmit} className="space-y-8">
+                <FormError message={formError} />
 
-                {errors.form && (
-                    <p className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{errors.form[0]}</p>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <Field id="business_name" label="Business name" error={fieldError('business_name')}>
-                        <input
+                <Section step={1} title="Your business">
+                    <FormField label="Business name" htmlFor="business_name" required error={fieldError('business_name')}>
+                        <Input
                             id="business_name"
                             required
+                            autoFocus
+                            autoComplete="organization"
+                            placeholder="e.g. Baraka Distributors"
                             value={form.business_name}
+                            invalid={!!fieldError('business_name')}
                             onChange={(e) => update('business_name', e.target.value)}
-                            className={inputClass}
                         />
-                    </Field>
-                    <Field id="business_phone" label="Business phone" error={fieldError('business_phone')}>
-                        <input
+                    </FormField>
+                    <FormField label="Business phone" htmlFor="business_phone" required error={fieldError('business_phone')}>
+                        <Input
                             id="business_phone"
                             required
+                            type="tel"
+                            inputMode="tel"
+                            autoComplete="tel"
+                            placeholder="07XX XXX XXX"
                             value={form.business_phone}
+                            invalid={!!fieldError('business_phone')}
                             onChange={(e) => update('business_phone', e.target.value)}
-                            className={inputClass}
                         />
-                    </Field>
-                    <Field id="name" label="Your name" error={fieldError('name')}>
-                        <input
-                            id="name"
-                            required
-                            value={form.name}
-                            onChange={(e) => update('name', e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field id="phone" label="Your phone" error={fieldError('phone')}>
-                        <input
-                            id="phone"
-                            required
-                            value={form.phone}
-                            onChange={(e) => update('phone', e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <Field id="email" label="Email" error={fieldError('email')}>
-                        <input
+                    </FormField>
+                </Section>
+
+                <Section step={2} title="About you">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField label="Your name" htmlFor="name" required error={fieldError('name')}>
+                            <Input
+                                id="name"
+                                required
+                                autoComplete="name"
+                                value={form.name}
+                                invalid={!!fieldError('name')}
+                                onChange={(e) => update('name', e.target.value)}
+                            />
+                        </FormField>
+                        <FormField label="Your phone" htmlFor="phone" required error={fieldError('phone')}>
+                            <Input
+                                id="phone"
+                                required
+                                type="tel"
+                                inputMode="tel"
+                                autoComplete="tel"
+                                value={form.phone}
+                                invalid={!!fieldError('phone')}
+                                onChange={(e) => update('phone', e.target.value)}
+                            />
+                        </FormField>
+                    </div>
+                    <FormField label="Email" htmlFor="email" required error={fieldError('email')} hint="You'll use this to log in.">
+                        <Input
                             id="email"
                             type="email"
                             required
+                            autoComplete="email"
+                            placeholder="you@business.co.ke"
                             value={form.email}
+                            invalid={!!fieldError('email')}
                             onChange={(e) => update('email', e.target.value)}
-                            className={inputClass}
                         />
-                    </Field>
-                    <Field id="password" label="Password" error={fieldError('password')}>
-                        <input
+                    </FormField>
+                </Section>
+
+                <Section step={3} title="Secure your account">
+                    <FormField label="Password" htmlFor="password" required error={fieldError('password')} hint="At least 8 characters.">
+                        <PasswordInput
                             id="password"
-                            type="password"
                             required
+                            minLength={8}
+                            autoComplete="new-password"
                             value={form.password}
+                            invalid={!!fieldError('password')}
                             onChange={(e) => update('password', e.target.value)}
-                            className={inputClass}
                         />
-                    </Field>
-                    <Field id="password_confirmation" label="Confirm password">
-                        <input
-                            id="password_confirmation"
-                            type="password"
-                            required
-                            value={form.password_confirmation}
-                            onChange={(e) => update('password_confirmation', e.target.value)}
-                            className={inputClass}
-                        />
-                    </Field>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full rounded bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    </FormField>
+                    <FormField
+                        label="Confirm password"
+                        htmlFor="password_confirmation"
+                        required
+                        error={passwordsMismatch ? 'Passwords don’t match yet.' : undefined}
                     >
-                        {isSubmitting ? 'Creating account…' : 'Create account'}
-                    </button>
-                </form>
+                        <PasswordInput
+                            id="password_confirmation"
+                            required
+                            autoComplete="new-password"
+                            value={form.password_confirmation}
+                            invalid={passwordsMismatch}
+                            onChange={(e) => update('password_confirmation', e.target.value)}
+                        />
+                    </FormField>
+                </Section>
 
-                <p className="mt-4 text-center text-sm text-slate-500">
-                    Already registered?{' '}
-                    <Link to="/login" className="font-medium text-slate-900 hover:underline">
-                        Log in
-                    </Link>
-                </p>
-            </div>
-        </div>
-    );
-}
+                <Button type="submit" size="lg" isLoading={isSubmitting} disabled={passwordsMismatch} className="w-full">
+                    {isSubmitting ? 'Creating your account…' : 'Create account'}
+                </Button>
+            </form>
 
-const inputClass =
-    'w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none';
-
-function Field({
-    id,
-    label,
-    error,
-    children,
-}: {
-    id: string;
-    label: string;
-    error?: string;
-    children: React.ReactNode;
-}) {
-    return (
-        <div>
-            <label htmlFor={id} className="mb-1 block text-sm font-medium text-slate-700">
-                {label}
-            </label>
-            {children}
-            {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
-        </div>
+            <p className="mt-8 rounded-xl bg-muted/60 px-4 py-3 text-center text-sm text-muted-foreground">
+                Already registered?{' '}
+                <Link to="/login" className="font-semibold text-primary hover:underline">
+                    Log in
+                </Link>
+            </p>
+        </AuthLayout>
     );
 }

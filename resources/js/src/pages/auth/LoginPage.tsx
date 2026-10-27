@@ -2,29 +2,32 @@ import { FormEvent, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { isAxiosError } from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { AuthLayout } from '../../components/layout/AuthLayout';
+import { Button } from '../../components/ui/Button';
+import { FormError, FormField, Input, PasswordInput } from '../../components/ui/Form';
 
 export function LoginPage() {
     const { user, login } = useAuth();
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
+    const [error, setError] = useState<string>();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (user) {
-        return <Navigate to="/products" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        setError(null);
+        setError(undefined);
         setIsSubmitting(true);
         try {
             await login(email, password);
-            navigate('/products');
+            navigate('/dashboard');
         } catch (err) {
             if (isAxiosError(err) && err.response?.status === 422) {
-                setError('Incorrect email or password.');
+                setError('That email and password don’t match. Please check and try again.');
             } else {
                 setError('Something went wrong. Please try again.');
             }
@@ -34,54 +37,43 @@ export function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-            <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <h1 className="mb-1 text-xl font-semibold text-slate-900">XiDistro</h1>
-                <p className="mb-6 text-sm text-slate-500">Log in to your distributor account.</p>
+        <AuthLayout title="Welcome back" subtitle="Log in to manage your products, retailers and deliveries.">
+            <form onSubmit={handleSubmit} className="space-y-5">
+                <FormError message={error} />
+                <FormField label="Email" htmlFor="email">
+                    <Input
+                        id="email"
+                        type="email"
+                        required
+                        autoFocus
+                        autoComplete="username"
+                        placeholder="you@business.co.ke"
+                        value={email}
+                        invalid={!!error}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                </FormField>
+                <FormField label="Password" htmlFor="password">
+                    <PasswordInput
+                        id="password"
+                        required
+                        autoComplete="current-password"
+                        value={password}
+                        invalid={!!error}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
+                </FormField>
+                <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full">
+                    {isSubmitting ? 'Logging in…' : 'Log in'}
+                </Button>
+            </form>
 
-                {error && (
-                    <p className="mb-4 rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">Email</label>
-                        <input
-                            id="email"
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">Password</label>
-                        <input
-                            id="password"
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full rounded border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting}
-                        className="w-full rounded bg-slate-900 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
-                    >
-                        {isSubmitting ? 'Logging in…' : 'Log in'}
-                    </button>
-                </form>
-
-                <p className="mt-4 text-center text-sm text-slate-500">
-                    New distributor?{' '}
-                    <Link to="/register" className="font-medium text-slate-900 hover:underline">
-                        Register your business
-                    </Link>
-                </p>
-            </div>
-        </div>
+            <p className="mt-8 rounded-xl bg-muted/60 px-4 py-3 text-center text-sm text-muted-foreground">
+                New to XiDistro?{' '}
+                <Link to="/register" className="font-semibold text-primary hover:underline">
+                    Register your business
+                </Link>
+            </p>
+        </AuthLayout>
     );
 }

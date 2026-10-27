@@ -6,8 +6,12 @@ export function ProtectedRoute() {
 
     if (isLoading) {
         return (
-            <div className="flex min-h-screen items-center justify-center text-slate-500">
-                Loading…
+            <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
+                <div
+                    className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary"
+                    role="status"
+                    aria-label="Loading"
+                />
             </div>
         );
     }
